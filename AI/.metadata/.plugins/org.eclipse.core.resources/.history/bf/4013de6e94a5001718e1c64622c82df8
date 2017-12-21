@@ -1,0 +1,31 @@
+
+
+import java.util.*;
+
+public class AlphaBetaPlayer extends CheckerPlayer implements CheckerBoardConstants {
+
+	public AlphaBetaPlayer(String name){
+		super(name);
+	}
+
+	public void calculateMove(int[][] bs, int whosTurn){
+
+		// your code should go here
+		
+		chosenMove = null;
+		
+		Vector successorMoves = Utils.getAllPossibleMoves(bs, whosTurn);
+		
+		if (successorMoves.isEmpty()) {
+			return;
+		}
+		
+		int root = Integer.MIN_VALUE;
+		Move next = null;
+		
+		for(int count = 1; count <  ) {
+			
+		}
+	}
+
+}

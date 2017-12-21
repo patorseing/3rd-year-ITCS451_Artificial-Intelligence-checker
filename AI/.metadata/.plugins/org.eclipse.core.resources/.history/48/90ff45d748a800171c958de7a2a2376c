@@ -1,0 +1,178 @@
+import java.util.*;
+
+public class THAIPANICHPlayer extends CheckerPlayer implements CheckerBoardConstants {
+
+	public THAIPANICHPlayer(String name){
+		super(name);
+	}
+
+	public void calculateMove(int[][] bs, int whosTurn){
+
+		// your code should go here
+		
+		chosenMove = null; 
+		
+		Vector<Move> allMoves = Utils.getAllPossibleMoves(bs, whosTurn);
+		
+		if (allMoves.isEmpty()) {
+			chosenMove = null;
+			return;
+		}
+		
+		int a = Integer.MIN_VALUE;	//alpha
+		int b = Integer.MAX_VALUE;	//bata
+		
+		int depth = 3;
+		
+		chosenMove = allMoves.get(0);
+		
+		for(Move nextmove : allMoves) {
+			int[][] nBs = Utils.copyBoardState(bs); // nBs = next boardState
+			Utils.executeMove(whosTurn, nextmove, nBs);
+			int min = min(nBs, whosTurn, a, b, depth-1);
+			if (min == a && Math.random() > 0.5){
+				a = min;
+				chosenMove = nextmove;
+			}
+			if (min > a){
+				a = min;
+				chosenMove = nextmove;
+			}
+		}
+	}
+	
+	public int min(int[][] bs, int whosTurn, int alpha, int beta, int depth){
+		
+		if (depth<=0) {
+			return checkscore(bs,whosTurn);
+		}
+		
+		Vector<Move> allMoves = Utils.getAllPossibleMoves(bs, whosTurn);
+		int max;
+		
+		for(Move nextmove : allMoves) {
+			int[][] nBs = Utils.copyBoardState(bs); // nBs = next boardState
+			Utils.executeMove(whosTurn, nextmove, nBs);
+			max = max(nBs, whosTurn, alpha, beta, depth - 1);
+			beta = Math.min(alpha, max); //if
+			
+			if (alpha>=beta)  {			
+				return beta;
+			}
+			
+		}
+		
+		return beta;
+	}
+
+	 public int max(int[][] bs, int whosTurn, int alpha, int beta, int depth){
+		 
+		 if (depth<=0) {
+			 return checkscore(bs,whosTurn);
+		 }
+			
+		 Vector<Move> allMoves = Utils.getAllPossibleMoves(bs, whosTurn);
+		 int min;
+			
+			for(Move nextmove : allMoves) {
+				int[][] nBs = Utils.copyBoardState(bs); // nBs = next boardState
+				Utils.executeMove(whosTurn, nextmove, nBs);
+				min = min(nBs, whosTurn, alpha, beta, depth - 1);
+				alpha = Math.max(alpha, min); //if
+				
+				if (alpha>=beta)  {			
+					return alpha;
+				}
+				
+			}
+		return alpha;	 
+	 }
+	 
+	 public int checkscore(int[][] bs, int whosTurn){
+		 return (whosTurn == RED_PLAYER ? -1: 1) * scoreCheckerBoard(bs, whosTurn);
+	 }
+	 
+	 public static int scoreCheckerBoard(int[][] bs, int whosTurn){
+
+		  // number of red pawns on the board
+		  int redPawnC = 0;
+		  // number of black pawns on the board
+		  int blackPawnC = 0;
+		  // number of red kings on the board
+		  int redKingC = 0;
+		  // number of black kings on the board
+		  int blackKingC = 0;
+		  
+		  //remaining of pawns
+		  int remaining = 0;
+			
+		  //chance to move red pawns
+		  int redChance=0;
+		  //chance to move black pawns
+		  int blackChance=0;
+		  // difference between chance of moving black pawns and moving red pawns
+		  int chanceDifference=0;
+		  //chance to move red king
+		  int redKCenter=0;
+		  //chance to move black pawns
+		  int blackKCenter=0;
+		  // difference between chance of moving black king and moving red king
+		  int kingCDifference=0;
+		  int pro=0;	// proximity
+		  int sumDis=0;	//sum of Distance
+		  ArrayList<Integer> redking = new ArrayList<Integer>();
+		  ArrayList<Integer> blackking = new ArrayList<Integer>();
+
+		  for (int i = 0; i < BOARD_HEIGHT ; i++){
+				for (int j = 0; j < BOARD_WIDTH; j++) {
+					int piece = bs[i][j];
+					switch(piece) {
+						case RED_PAWN:
+							redPawnC++;
+							redChance+= 64 - (10/((j+1)/BOARD_WIDTH));
+							break;
+						case BLACK_PAWN:
+							blackPawnC++;
+							blackChance+=(10/((64-i)/BOARD_WIDTH));
+							break;
+						case RED_KING:
+							redKingC++;
+							redking.add(piece);
+							redKCenter+= 64 - (16/Math.abs(i-27));
+							break;
+						case BLACK_KING:
+							blackKingC++;
+							blackking.add(piece);
+							blackKCenter+=(16/Math.abs(i-27));
+							break;
+					}
+					remaining++;
+				}
+		  }
+		  
+		  chanceDifference=redChance-blackChance;
+		  chanceDifference*=1.2;
+			
+		  kingCDifference=redKCenter-blackKCenter;
+		  
+		  int materialDif=0;
+		  
+		  materialDif=((redPawnC + 2*redKingC) - (blackPawnC + 2*blackKingC));
+		  materialDif*=10;
+		  
+		  if(remaining>=13){
+			return materialDif+chanceDifference+kingCDifference;
+		  }
+		  else 
+			{
+				for (Integer i : redking) {
+					for (Integer j : blackking) {
+						sumDis+=Math.sqrt(Math.pow(((i+1)/BOARD_WIDTH)-((j+1)/BOARD_WIDTH),2)+Math.pow(((i+1)/BOARD_HEIGHT)-((j+1)/BOARD_HEIGHT), 2)); //from 0 to 8sqrt2
+						pro+=8/(sumDis+1);
+						
+					}
+				}
+				return ((int)1.4*materialDif)+((int)1.5*chanceDifference)+((int)0.5*kingCDifference)+pro;
+			}
+	}
+}
